@@ -12,6 +12,11 @@ from dotenv import load_dotenv
 
 API_TOKEN = os.environ.get("BOT_TOKEN")
 
+print(f"API_TOKEN: {API_TOKEN}")
+
+if not API_TOKEN:
+    raise ValueError("Токен не найден! Проверь переменные окружения в Railway.")
+
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher()
