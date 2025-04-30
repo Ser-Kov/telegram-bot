@@ -4,7 +4,8 @@ import logging
 import json
 import os
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message, ParseMode
+from aiogram.types import Message
+from aiogram.utils import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.enums import ParseMode
 from dotenv import load_dotenv
