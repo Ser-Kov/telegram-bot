@@ -4,7 +4,7 @@ import logging
 import json
 import os
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message
+from aiogram.types import Message, ParseMode
 from aiogram.filters import CommandStart
 from aiogram.enums import ParseMode
 from dotenv import load_dotenv
@@ -13,8 +13,9 @@ from dotenv import load_dotenv
 API_TOKEN = os.environ.get("BOT_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
-dp = Dispatcher()
+bot = Bot(token=API_TOKEN) 
+bot = bot.default(parse_mode=ParseMode.HTML)
+dp = Dispatcher(bot)
 
 USERS_FILE = "users.json"
 
