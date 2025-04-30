@@ -9,8 +9,8 @@ from aiogram.filters import CommandStart
 from aiogram.enums import ParseMode
 from dotenv import load_dotenv
 
-load_dotenv()
-API_TOKEN = os.getenv("BOT_TOKEN")
+
+API_TOKEN = os.environ.get("BOT_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
