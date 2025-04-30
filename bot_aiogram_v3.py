@@ -10,7 +10,7 @@ from aiogram.enums import ParseMode
 from dotenv import load_dotenv
 
 
-API_TOKEN = '7135246899:AAFyM8vD1Q6toDajrHNgP5rQP3AoqJ9pv0c'
+API_TOKEN = os.environ.get("BOT_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
