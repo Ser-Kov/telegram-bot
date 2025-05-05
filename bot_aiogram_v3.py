@@ -43,7 +43,7 @@ async def cmd_start(message: Message):
 @router.message(lambda msg: msg.text == "📄 Скачать PDF")
 async def send_pdf(message: Message):
     file = FSInputFile("data/prompts_preview.pdf", filename="prompts_preview.pdf")
-        await message.answer_document(document=file, caption="Вот твой PDF с промптами 🚀")
+    await message.answer_document(document=file, caption="Вот твой PDF с промптами 🚀")
 
 @router.message(lambda msg: msg.text == "💳 Купить 50+ промптов")
 async def buy_prompts(message: Message):
