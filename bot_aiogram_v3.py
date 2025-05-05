@@ -7,7 +7,7 @@ from aiogram.types import Message
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import Router
-
+from aiogram.filters import Command
 
 # Настройки
 API_TOKEN = os.environ.get("BOT_TOKEN")
@@ -31,7 +31,7 @@ def get_main_keyboard():
 
 
 # --- Хендлеры --- #
-@router.message(commands=["start"])
+@router.message(Command("start"))
 async def cmd_start(message: Message):
     await message.answer(
         "Привет! 👋\n\nЯ помогу тебе использовать нейросети эффективно. Получи бесплатный PDF с 10 промптами и начни прямо сейчас!",
