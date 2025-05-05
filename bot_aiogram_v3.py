@@ -1,91 +1,47 @@
-
-import asyncio
+from aiogram import Bot, Dispatcher, types, executor
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 import logging
-import json
 import os
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message
-from aiogram.filters import CommandStart
-from aiogram.enums import ParseMode
-from dotenv import load_dotenv
-
 
 API_TOKEN = os.environ.get("BOT_TOKEN")
 
+# Включаем логирование
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
-dp = Dispatcher()
 
-USERS_FILE = "users.json"
+# Инициализация бота и диспетчера
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher(bot)
 
-def load_users():
-    if not os.path.exists(USERS_FILE):
-        return {}
-    with open(USERS_FILE, "r") as f:
-        return json.load(f)
+# --- Кнопки --- #
+main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
+main_menu.add(KeyboardButton("📄 Скачать PDF"))
+main_menu.add(KeyboardButton("💳 Купить 50+ промптов"))
+main_menu.add(KeyboardButton("✨ Индивидуальные промпты"))
 
-def save_users(users):
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f)
-
-def main_keyboard():
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
-        [types.KeyboardButton(text="🔥 Получить платную схему")],
-        [
-            types.KeyboardButton(text="💬 Оставить отзыв"),
-            types.KeyboardButton(text="❓ Возникли трудности")
-        ]
-    ])
-    return keyboard
-
-@dp.message(CommandStart())
-async def start_cmd(message: Message):
-    user_id = str(message.from_user.id)
-    users = load_users()
-
-    if user_id not in users:
-        users[user_id] = True
-        save_users(users)
-        await message.answer(
-            "🎉 Добро пожаловать!\n\n"
-            "Вот твоя бесплатная схема заработка с телефона:\n"
-            "👉 https://casinoactionplay.com/FKMF\n\n"
-            "Если хочешь больше — нажми кнопку ниже 👇",
-            reply_markup=main_keyboard()
-        )
-    else:
-        await message.answer(
-            "⚠️ Ты уже получил бесплатную схему.\n\n"
-            "Хочешь узнать больше? Получи доступ к полной версии схемы 👇",
-            reply_markup=main_keyboard()
-        )
-
-@dp.message(lambda msg: msg.text == "🔥 Получить платную схему")
-async def paid_scheme(message: Message):
+# --- Хендлеры --- #
+@dp.message_handler(commands=["start"])
+async def send_welcome(message: types.Message):
     await message.answer(
-        "🔐 Платная схема — это:\n"
-        "- Полный пошаговый план\n"
-        "- Фильтр от халявщиков\n"
-        "- Твоя инвестиция в результат\n\n"
-        "👉 Напиши мне в ЛС, чтобы получить её: @ser_kovalevsky"
+        "Привет! 👋\n\nЯ помогу тебе использовать нейросети эффективно. Получи бесплатный PDF с 10 промптами и начни прямо сейчас!",
+        reply_markup=main_menu
     )
 
-@dp.message(lambda msg: msg.text == "💬 Оставить отзыв")
-async def leave_review(message: Message):
-    await message.answer("📝 Напиши свой отзыв прямо сюда: @ser_kovalevsky")
+@dp.message_handler(lambda message: message.text == "📄 Скачать PDF")
+async def send_pdf(message: types.Message):
+    with open("data/Ковалевский Сергей.pdf", "rb") as file:
+        await message.answer_document(file, caption="Вот твой PDF с промптами 🚀")
 
-@dp.message(lambda msg: msg.text == "❓ Возникли трудности")
-async def faq_handler(message: Message):
+@dp.message_handler(lambda message: message.text == "💳 Купить 50+ промптов")
+async def buy_prompts(message: types.Message):
     await message.answer(
-        "❓ Частые вопросы и помощь:\n"
-        "1. Не открывается ссылка? Попробуй открыть в другом браузере или включить VPN.\n"
-        "2. Ничего не понятно? Напиши мне: @ser_kovalevsky\n\n"
-        "Или загляни в помощника: @faq_helper_bot"
+        "Для покупки набора из 50+ промптов перейди по ссылке и оформи оплату: \n\nhttps://boosty.to/your-link\n\nПосле оплаты напиши сюда, и я пришлю тебе доступ 🚀"
     )
 
+@dp.message_handler(lambda message: message.text == "✨ Индивидуальные промпты")
+async def custom_request(message: types.Message):
+    await message.answer(
+        "Опиши свою задачу — и я подготовлю персональные промпты специально под тебя. Чем подробнее, тем лучше!"
+    )
 
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
