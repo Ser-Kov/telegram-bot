@@ -8,6 +8,8 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import Router
 from aiogram.filters import Command
+from aiogram.types import FSInputFile
+
 
 # Настройки
 API_TOKEN = os.environ.get("BOT_TOKEN")
@@ -40,8 +42,8 @@ async def cmd_start(message: Message):
 
 @router.message(lambda msg: msg.text == "📄 Скачать PDF")
 async def send_pdf(message: Message):
-    with open("data/prompts_preview.pdf", "rb") as file:
-        await message.answer_document(file, caption="Вот твой PDF с промптами 🚀")
+    file = FSInputFile("data/prompts_preview.pdf", filename="prompts_preview.pdf")
+        await message.answer_document(document=file, caption="Вот твой PDF с промптами 🚀")
 
 @router.message(lambda msg: msg.text == "💳 Купить 50+ промптов")
 async def buy_prompts(message: Message):
