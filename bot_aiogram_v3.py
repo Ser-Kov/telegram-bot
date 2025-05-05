@@ -28,7 +28,7 @@ router = Router()
 def get_main_keyboard():
     kb = ReplyKeyboardBuilder()
     kb.button(text="📄 Скачать PDF")
-    kb.button(text="💳 Купить 50+ промптов")
+    kb.button(text="📘 Что внутри платного PDF")
     kb.button(text="✨ Индивидуальные промпты")
     kb.adjust(1)
     return kb.as_markup(resize_keyboard=True)
