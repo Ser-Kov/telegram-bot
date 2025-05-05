@@ -40,7 +40,7 @@ async def cmd_start(message: Message):
 
 @router.message(lambda msg: msg.text == "📄 Скачать PDF")
 async def send_pdf(message: Message):
-    with open("data/Ковалевский Сергей.pdf", "rb") as file:
+    with open("data/prompts_preview.pdf", "rb") as file:
         await message.answer_document(file, caption="Вот твой PDF с промптами 🚀")
 
 @router.message(lambda msg: msg.text == "💳 Купить 50+ промптов")
