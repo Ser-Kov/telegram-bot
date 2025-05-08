@@ -280,7 +280,7 @@ import asyncio
 app = FastAPI()
 
 # Robokassa настройки
-ROBO_LOGIN = "ailab"
+ROBO_LOGIN = "ai_lab"
 ROBO_PASSWORD2 = "sKNbUPuD24G7P0oadt3A"
 
 # Таблица соответствий кодов товара и PDF
