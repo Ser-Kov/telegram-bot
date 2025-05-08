@@ -2,6 +2,8 @@ from fastapi import FastAPI, Request
 from aiogram.types import FSInputFile
 import hashlib
 from bot_aiogram_v3 import bot, PRODUCTS, ROBO_PASSWORD2
+import asyncio
+
 
 app = FastAPI()
 
