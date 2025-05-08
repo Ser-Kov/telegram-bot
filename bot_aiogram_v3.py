@@ -12,6 +12,8 @@ from aiogram.filters import Command
 from aiogram.types import FSInputFile
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.types import ReplyKeyboardRemove
+from fastapi import FastAPI, Request
+import hashlib
 
 
 
@@ -288,9 +290,6 @@ PRODUCTS = {
 }
 
 # --- FastAPI для Robokassa --- #
-from fastapi import FastAPI, Request
-import hashlib
-
 app = FastAPI()
 
 @app.post("/payment_callback")
