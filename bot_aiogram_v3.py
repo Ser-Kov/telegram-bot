@@ -341,4 +341,5 @@ async def main():
 # --- Запуск бота вместе с FastAPI --- #
 @app.on_event("startup")
 async def on_startup():
-    asyncio.create_task(main())
+    # asyncio.create_task(main())  # отключаем бота временно
+    pass
