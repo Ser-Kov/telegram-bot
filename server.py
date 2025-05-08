@@ -5,6 +5,10 @@ from bot_aiogram_v3 import bot, PRODUCTS, ROBO_PASSWORD2
 
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"status": "alive"}
+
 @app.post("/payment_callback")
 async def robokassa_payment_handler(request: Request):
     form = await request.form()
