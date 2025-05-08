@@ -15,7 +15,7 @@ from aiogram.types import ReplyKeyboardRemove
 
 
 
-# Настройки
+# Настройки для продакшн
 API_TOKEN = os.environ.get("BOT_TOKEN")
 if not API_TOKEN:
     raise RuntimeError("BOT_TOKEN is not set")
