@@ -5,6 +5,18 @@ from bot_aiogram_v3 import bot, PRODUCTS, ROBO_PASSWORD2
 
 app = FastAPI()
 
+@app.get("/")
+async def root():
+    return {"status": "alive"}
+
+@app.on_event("startup")
+async def keep_alive():
+    asyncio.create_task(fake_loop())
+
+async def fake_loop():
+    while True:
+        await asyncio.sleep(3600)
+
 @app.post("/payment_callback")
 async def robokassa_payment_handler(request: Request):
     form = await request.form()
