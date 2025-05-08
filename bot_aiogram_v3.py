@@ -343,7 +343,4 @@ async def main():
 async def on_startup():
     # asyncio.create_task(main())  # отключаем бота временно
     pass
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("bot_aiogram_v3:app", host="0.0.0.0", port=8000)
+    
