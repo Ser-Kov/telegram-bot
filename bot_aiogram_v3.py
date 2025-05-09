@@ -63,7 +63,7 @@ async def cmd_start(message: Message):
 @router.message(Command("menu"))
 async def show_menu(message: Message):
     await message.answer(
-        "🏠 <b>Главное меню</b>\n\nВыбирай, с чего начать 👇",
+        "🏠 <b>Главное меню</b>",
         parse_mode=ParseMode.HTML,
         reply_markup=get_main_keyboard()
     )
