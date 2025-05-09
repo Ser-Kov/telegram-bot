@@ -158,15 +158,10 @@ async def show_paid_options(message: Message):
     await message.answer(
         "❓ Не нашёл свою нишу?\nПопробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу:",
         parse_mode=ParseMode.HTML,
-        reply_markup=ind_kb.as_markup()
-    )
-    
-    # Сообщение с возвратом в меню
-    await message.answer(
-        "⬅️ Вернуться в главное меню:",
+        reply_markup=ind_kb.as_markup(),
         reply_markup=get_return_to_menu_keyboard()
     )
-
+    
 
 @router.callback_query(lambda c: c.data.startswith("niche_"))
 async def show_niche_pdf(callback: CallbackQuery):
