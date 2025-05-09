@@ -43,13 +43,6 @@ def get_main_keyboard():
     return kb.as_markup(resize_keyboard=True)
 
 
-def get_return_to_menu_keyboard():
-    kb = ReplyKeyboardBuilder()
-    kb.button(text="🏠 Вернуться в меню")
-    kb.adjust(1)
-    return kb.as_markup(resize_keyboard=True)
-
-
 def after_preview_keyboard():
     kb = ReplyKeyboardBuilder()
     kb.button(text="🔥 Что внутри платных PDF?")
@@ -63,6 +56,15 @@ async def cmd_start(message: Message):
     await message.answer(
         "Привет! 👋\n\nЯ помогу тебе использовать нейросети эффективно. Получи бесплатный PDF "
         "с 10 промптами и начни прямо сейчас!",
+        reply_markup=get_main_keyboard()
+    )
+
+
+@router.message(Command("menu"))
+async def show_menu(message: Message):
+    await message.answer(
+        "🏠 <b>Главное меню</b>\n\nВыбирай, с чего начать 👇",
+        parse_mode=ParseMode.HTML,
         reply_markup=get_main_keyboard()
     )
 
@@ -91,14 +93,6 @@ async def send_public_offer(message: Message):
     )
 
 
-@router.message(lambda msg: msg.text == "🏠 Вернуться в меню")
-async def return_to_main_menu(message: Message):
-    await message.answer(
-        "🏠 Главное меню:",
-        reply_markup=get_main_keyboard()
-    )
-
-
 @router.message(lambda msg: msg.text == "✨ Индивидуальные промпты")
 async def start_custom_prompt(message: Message, state: FSMContext):
     await state.set_state(CustomPromptForm.waiting_for_description)
@@ -112,7 +106,6 @@ async def start_custom_prompt(message: Message, state: FSMContext):
         "покупке. ЦА — психологи и коучи. Канал — Instagram.»\n\n"
         "📌 Чем подробнее — тем качественнее будут промпты. Напиши ниже 👇",
         parse_mode=ParseMode.HTML,
-        reply_markup=get_return_to_menu_keyboard()
     )
     
 
@@ -159,12 +152,6 @@ async def show_paid_options(message: Message):
         "❓ Не нашёл свою нишу?\nПопробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу:",
         parse_mode=ParseMode.HTML,
         reply_markup=ind_kb.as_markup()
-    )
-    
-    # Сообщение с возвратом в меню
-    await message.answer(
-        "⬅️ Вернуться в главное меню:",
-        reply_markup=get_return_to_menu_keyboard()
     )
 
 
@@ -314,10 +301,6 @@ async def receive_description(message: Message, state: FSMContext):
     reply_markup=kb.as_markup()
     )
 
-    await message.answer(
-        "⬅️ Или нажми кнопку ниже, чтобы вернуться в меню.",
-        reply_markup=get_return_to_menu_keyboard()
-    )
 
     await state.clear()
 
