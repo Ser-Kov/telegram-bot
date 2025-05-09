@@ -89,7 +89,8 @@ async def send_public_offer(message: Message):
     await message.answer(
         '🧾 <b>Публичная оферта</b> доступна по ссылке:\n\n'
         '<a href="https://telegra.ph/Publichnaya-oferta--AI-Laboratoriya-05-08">Открыть документ</a>',
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
+        reply_markup=types.ReplyKeyboardRemove()
     )
 
 
@@ -106,6 +107,7 @@ async def start_custom_prompt(message: Message, state: FSMContext):
         "покупке. ЦА — психологи и коучи. Канал — Instagram.»\n\n"
         "📌 Чем подробнее — тем качественнее будут промпты. Напиши ниже 👇",
         parse_mode=ParseMode.HTML,
+        reply_markup=types.ReplyKeyboardRemove()
     )
     
 
@@ -152,6 +154,11 @@ async def show_paid_options(message: Message):
         "❓ Не нашёл свою нишу?\nПопробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу:",
         parse_mode=ParseMode.HTML,
         reply_markup=ind_kb.as_markup()
+    )
+    
+    await message.answer(
+    "👇 Для возврата в главное меню",
+    reply_markup=types.ReplyKeyboardRemove()
     )
 
 
