@@ -39,7 +39,7 @@ def get_main_keyboard():
     kb.button(text="🔥 Что внутри платных PDF?")
     kb.button(text="✨ Индивидуальные промпты")
     kb.button(text="📄 Публичная оферта")
-    kb.adjust(2)
+    kb.adjust(1)
     return kb.as_markup(resize_keyboard=True)
 
 
