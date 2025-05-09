@@ -112,8 +112,9 @@ async def start_custom_prompt(message: Message, state: FSMContext):
         "покупке. ЦА — психологи и коучи. Канал — Instagram.»\n\n"
         "📌 Чем подробнее — тем качественнее будут промпты. Напиши ниже 👇",
         parse_mode=ParseMode.HTML
+        reply_markup=get_return_to_menu_keyboard()
     )
-
+    
 
 @router.callback_query(lambda c: c.data == "custom_prompt")
 async def handle_custom_prompt_button(callback: CallbackQuery, state: FSMContext):
