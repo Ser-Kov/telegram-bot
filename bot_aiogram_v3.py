@@ -91,6 +91,14 @@ async def send_public_offer(message: Message):
     )
 
 
+@router.message(lambda msg: msg.text == "🏠 Вернуться в меню")
+async def return_to_main_menu(message: Message):
+    await message.answer(
+        "🏠 Главное меню:",
+        reply_markup=get_main_keyboard()
+    )
+
+
 @router.message(lambda msg: msg.text == "✨ Индивидуальные промпты")
 async def start_custom_prompt(message: Message, state: FSMContext):
     await state.set_state(CustomPromptForm.waiting_for_description)
@@ -150,6 +158,12 @@ async def show_paid_options(message: Message):
         "❓ Не нашёл свою нишу?\nПопробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу:",
         parse_mode=ParseMode.HTML,
         reply_markup=ind_kb.as_markup()
+    )
+    
+    # Сообщение с возвратом в меню
+    await message.answer(
+        "⬅️ Вернуться в главное меню:",
+        reply_markup=get_return_to_menu_keyboard()
     )
 
 
@@ -262,15 +276,6 @@ async def show_niche_pdf(callback: CallbackQuery):
     await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb.as_markup())
     await callback.answer()
 
-
-@router.message(lambda msg: msg.text == "🏠 Вернуться в меню")
-async def return_to_main_menu(message: Message):
-    await message.answer(
-        "🏠 Главное меню:",
-        reply_markup=get_main_keyboard()
-    )
-
-
 custom_requests = {}  # user_id: {"text": str, "timestamp": float}
 
 
@@ -299,10 +304,13 @@ async def receive_description(message: Message, state: FSMContext):
     kb.button(text="💳 Оплатить 499 ₽", url="https://example.com/custom_payment_placeholder")
 
     await message.answer(
-        "🔐 <b>Отлично!</b> Мы подготовим промпты специально под твою задачу.\n\n"
-        "Стоимость — <b>499 ₽</b>. После оплаты заявка попадёт в работу.",
-        parse_mode=ParseMode.HTML,
-        reply_markup=kb.as_markup()
+    "✅ <b>Заявка получена!</b>\n\n"
+    "Мы подготовим <b>3 индивидуальных AI-промпта</b> под твою задачу: по структуре, тону, платформе и результату.\n\n"
+    "💳 Стоимость — <b>499 ₽</b>\n"
+    "⏳ Важно: ссылка на оплату будет действительна <b>30 минут</b>.\n\n"
+    "После оплаты заявка поступит в работу, и ты получишь PDF напрямую в Telegram.",
+    parse_mode=ParseMode.HTML,
+    reply_markup=kb.as_markup()
     )
 
     await message.answer(
