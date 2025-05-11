@@ -52,7 +52,18 @@ PAID_REMINDER_TEXTS = [
     "🔥 Пока другие пишут вручную — у тебя есть шанс автоматизировать через ИИ. Забери нужный PDF и внедри уже сегодня."
 ]
 
+# Функция для генерации ссылок с оплатой
+def generate_payment_url(user_id: int, product_code: str, price: int) -> str:
+    inv_id = f"{user_id}_{product_code}"
+    out_sum = str(price)
+    base = f"{ROBO_LOGIN}:{out_sum}:{inv_id}:{ROBO_PASSWORD1}"
+    sign = hashlib.md5(base.encode()).hexdigest()
 
+    return (
+        f"https://auth.robokassa.ru/Merchant/Index.aspx?"
+        f"MerchantLogin={ROBO_LOGIN}&OutSum={out_sum}&InvId={inv_id}&SignatureValue={sign}"
+    )
+    
 # --- Кнопки --- #
 def get_main_keyboard():
     kb = ReplyKeyboardBuilder()
@@ -349,8 +360,13 @@ async def show_niche_pdf(callback: CallbackQuery):
     }
 
     text = descriptions.get(niche, "Информация по этой нише будет добавлена позже.")
+    
+    user_id = callback.from_user.id
+    payment_link = generate_payment_url(user_id, niche, 249)
+    
     kb = InlineKeyboardBuilder()
-    kb.button(text="💳 Оплатить 249 ₽", url="https://example.com/payment_placeholder")
+    kb.button(text="💳 Оплатить 249 ₽", url=payment_link)
+
     await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb.as_markup())
     await callback.answer()
 
@@ -378,8 +394,10 @@ async def receive_description(message: Message, state: FSMContext):
         "timestamp": time.time()
     }
 
+    payment_link = generate_payment_url(user_id, "custom", 499)
+    
     kb = InlineKeyboardBuilder()
-    kb.button(text="💳 Оплатить 499 ₽", url="https://example.com/custom_payment_placeholder")
+    kb.button(text="💳 Оплатить 499 ₽", url=payment_link)
 
     await message.answer(
     "✅ <b>Заявка получена!</b>\n\n"
