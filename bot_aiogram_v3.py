@@ -31,6 +31,27 @@ bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 
+# --- Переменные --- #
+free_pdf_reminders = {
+    # user_id: {"start": timestamp, "last_remind": None, "attempts": 0}
+}
+
+paid_view_timestamps = {
+    # user_id: {"start": timestamp, "last_remind": None, "attempts": 0}
+}
+
+FREE_REMINDER_TEXTS = [
+    "👋 Ты не забрал бесплатный PDF — он по-прежнему доступен.\n10 шаблонов, чтобы сэкономить часы. Забери пока не забыл:",
+    "📌 Напоминаю: твой бесплатный AI-набор ещё ждёт. 10 промптов, чтобы упростить работу и протестировать ИИ в деле.",
+    "🔄 Пропустил старт? Бесплатный PDF с промптами всё ещё активен. Забери — и начни применять сегодня:"
+]
+
+PAID_REMINDER_TEXTS = [
+    "💡 Уже применил бесплатные промпты? Тогда ты готов на следующий шаг.\nВ платных PDF — глубже, точнее и под результат.",
+    "📈 Следующий уровень уже рядом — платные PDF помогут выжать максимум из нейросети. Инструкция, шаблоны, чек-лист.",
+    "🔥 Пока другие пишут вручную — у тебя есть шанс автоматизировать через ИИ. Забери нужный PDF и внедри уже сегодня."
+]
+
 
 # --- Кнопки --- #
 def get_main_keyboard():
@@ -53,6 +74,13 @@ def after_preview_keyboard():
 # --- Хендлеры --- #
 @router.message(Command("start"))
 async def cmd_start(message: Message):
+    user_id = message.from_user.id
+    if user_id not in free_pdf_reminders:
+        free_pdf_reminders[user_id] = {
+            "start": time.time(),
+            "last_remind": None,
+            "attempts": 0
+        }
     await message.answer(
         "Привет! 👋\n\nЯ помогу тебе использовать нейросети эффективно. Получи бесплатный PDF "
         "с 10 промптами и начни прямо сейчас!",
@@ -82,6 +110,10 @@ async def send_pdf(message: Message):
         "Нажми 👉 <b>🔥 Что внутри платных PDF?</b>",
         reply_markup=after_preview_keyboard()
     )
+    user_id = message.from_user.id
+    if user_id in free_pdf_reminders:
+        del free_pdf_reminders[user_id]
+
 
 
 @router.message(lambda msg: msg.text == "📄 Публичная оферта")
@@ -141,6 +173,14 @@ async def show_paid_options(message: Message):
     kb.button(text="📦 Товарка", callback_data="niche_ecom")
     kb.button(text="💼 Фриланс", callback_data="niche_freelance")
     kb.adjust(2)
+
+    user_id = message.from_user.id
+    if user_id not in paid_view_timestamps:
+        paid_view_timestamps[user_id] = {
+            "start": time.time(),
+            "last_remind": None,
+            "attempts": 0
+        }
 
     await message.answer(
         "👇 Выбери интересующую нишу, чтобы раскрыть содержимое PDF и получить ссылку на покупку:",
@@ -403,6 +443,58 @@ async def robokassa_payment_handler(request: Request):
         return f"error: {e}"
 
 
+async def reminder_loop():
+    while True:
+        now = time.time()
+
+        # Напоминания о бесплатном PDF
+        for user_id, data in list(free_pdf_reminders.items()):
+            start = data["start"]
+            last_remind = data.get("last_remind")
+            attempts = data.get("attempts", 0)
+
+            if now - start >= 40 * 60 and (not last_remind or now - last_remind >= 2 * 3600):
+                try:
+                    text = FREE_REMINDER_TEXTS[min(attempts, len(FREE_REMINDER_TEXTS) - 1)]
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text=text,
+                        reply_markup=get_main_keyboard()
+                    )
+                    free_pdf_reminders[user_id]["last_remind"] = now
+                    free_pdf_reminders[user_id]["attempts"] = attempts + 1
+                    if free_pdf_reminders[user_id]["attempts"] >= 3:
+                        del free_pdf_reminders[user_id]
+                except Exception as e:
+                    logging.warning(f"[FREE REMINDER] Ошибка для {user_id}: {e}")
+
+        # Напоминания о платных PDF
+        for user_id, data in list(paid_view_timestamps.items()):
+            start = data["start"]
+            last_remind = data.get("last_remind")
+            attempts = data.get("attempts", 0)
+
+            if now - start >= 8 * 3600 and (not last_remind or now - last_remind >= 24 * 3600):
+                try:
+                    text = PAID_REMINDER_TEXTS[min(attempts, len(PAID_REMINDER_TEXTS) - 1)]
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text=text,
+                        reply_markup=types.ReplyKeyboardMarkup(
+                            keyboard=[[types.KeyboardButton(text="🔥 Что внутри платных PDF?")]],
+                            resize_keyboard=True
+                        )
+                    )
+                    paid_view_timestamps[user_id]["last_remind"] = now
+                    paid_view_timestamps[user_id]["attempts"] = attempts + 1
+                    if paid_view_timestamps[user_id]["attempts"] >= 3:
+                        del paid_view_timestamps[user_id]
+                except Exception as e:
+                    logging.warning(f"[PAID REMINDER] Ошибка для {user_id}: {e}")
+
+        await asyncio.sleep(300)
+
+
 # --- Запуск aiogram-бота --- #
 async def main():
     logging.basicConfig(level=logging.INFO)
@@ -413,3 +505,4 @@ async def main():
 @app.on_event("startup")
 async def start_bot():
     asyncio.create_task(main())
+    asyncio.create_task(reminder_loop())
