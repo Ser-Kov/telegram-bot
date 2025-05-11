@@ -490,7 +490,7 @@ async def robokassa_payment_handler(request: Request):
                 except Exception:
                     pass
 
-                ADMIN_ID = 123456789  # ← ЗАМЕНИ на свой Telegram ID
+                ADMIN_ID = 1555496965  # ← ЗАМЕНИ на свой Telegram ID
 
                 formatted = (
                     "📬 <b>Новая заявка на индивидуальные промпты</b>\n\n"
