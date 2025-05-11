@@ -475,6 +475,8 @@ async def robokassa_payment_handler(request: Request):
             file = FSInputFile(pdf_path)
             await bot.send_document(chat_id=tg_user_id, document=file,
                                     caption="✅ Спасибо за оплату! Вот ваш PDF.")
+            # Удаляем напоминание, если пользователь купил
+            paid_view_timestamps.pop(tg_user_id, None)
             return "OK"
 
         # === Обработка custom-продукта ===
