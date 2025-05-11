@@ -430,6 +430,7 @@ async def contact_author(message: Message):
 
 # Robokassa настройки
 ROBO_LOGIN = "ai_lab"
+ROBO_PASSWORD1 = "tv85vuKRjVLik9zg4K2u"
 ROBO_PASSWORD2 = "sKNbUPuD24G7P0oadt3A"
 
 # Таблица соответствий кодов товара и PDF
