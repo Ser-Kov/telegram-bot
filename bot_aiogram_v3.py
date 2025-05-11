@@ -398,38 +398,16 @@ async def receive_description(message: Message, state: FSMContext):
     asyncio.create_task(clear_request_after_timeout(user_id, delay=1800))
 
 
-class SupportForm(StatesGroup):
-    waiting_for_message = State()
-
-
 @router.message(lambda msg: msg.text == "📩 Написать автору")
-async def start_support(message: Message, state: FSMContext):
-    await state.set_state(SupportForm.waiting_for_message)
+async def contact_author(message: Message):
     await message.answer(
-        "📝 Напиши свой вопрос или сообщение — и я передам его автору проекта. Ответ придёт сюда, в бот.\n\n"
-        "Если передумал — напиши /menu"
+        "📩 <b>Связаться с автором проекта</b>\n\n"
+        "Если у тебя остались вопросы, что-то не сработало или нужна помощь — ты можешь напрямую написать автору проекта.\n\n"
+        "<b>Сергей Ковалевский</b> — создатель этого бота и всех PDF, отвечает лично. Просьба уважительно формулировать сообщение и сразу писать по делу 🙏\n\n"
+        "🔗 <a href=\"https://t.me/@ser_kovalevsky\">Написать Сергею Ковалевскому</a>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=types.ReplyKeyboardRemove()
     )
-
-
-@router.message(SupportForm.waiting_for_message)
-async def forward_support_request(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-    username = message.from_user.username or "—"
-    text = message.text.strip()
-
-    # ID, куда пересылать (вставь свой Telegram ID или лог-канал)
-    ADMIN_ID = 1555496965
-
-    formatted = (
-        f"📨 <b>Новое обращение из бота</b>\n"
-        f"<b>От:</b> @{username} (ID: {user_id})\n\n"
-        f"{text}"
-    )
-
-    await bot.send_message(chat_id=ADMIN_ID, text=formatted, parse_mode=ParseMode.HTML)
-
-    await message.answer("✅ Спасибо! Сообщение отправлено. Я передал его автору.")
-    await state.clear()
 
 
 # Robokassa настройки
