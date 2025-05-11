@@ -444,15 +444,47 @@ async def robokassa_payment_handler(request: Request):
         return "bad sign"
 
     try:
-        tg_user_id, product_code = InvId.split("_")
-        pdf_path = PRODUCTS.get(product_code)
-        if not pdf_path:
-            return "product not found"
+        tg_user_id_str, product_code = InvId.split("_")
+        tg_user_id = int(tg_user_id_str)
 
-        file = FSInputFile(pdf_path)
-        await bot.send_document(chat_id=int(tg_user_id), document=file,
-                                caption="✅ Спасибо за оплату! Вот ваш PDF.")
-        return "OK"
+        # === Обработка обычных PDF ===
+        if product_code in PRODUCTS:
+            pdf_path = PRODUCTS[product_code]
+            file = FSInputFile(pdf_path)
+            await bot.send_document(chat_id=tg_user_id, document=file,
+                                    caption="✅ Спасибо за оплату! Вот ваш PDF.")
+            return "OK"
+
+        # === Обработка custom-продукта ===
+        if product_code == "custom":
+            if tg_user_id in custom_requests:
+                description = custom_requests[tg_user_id]["text"]
+                username_link = f"@{tg_user_id}"  # по умолчанию, если нет username
+
+                # Попробуем получить username
+                try:
+                    user = await bot.get_chat(tg_user_id)
+                    username_link = f"@{user.username}" if user.username else f"ID: {tg_user_id}"
+                except Exception:
+                    pass
+
+                ADMIN_ID = 123456789  # ← ЗАМЕНИ на свой Telegram ID
+
+                formatted = (
+                    "📬 <b>Новая заявка на индивидуальные промпты</b>\n\n"
+                    f"👤 {username_link} (ID: <code>{tg_user_id}</code>)\n"
+                    f"✏️ <b>Задача:</b>\n{description}"
+                )
+
+                await bot.send_message(chat_id=ADMIN_ID, text=formatted, parse_mode=ParseMode.HTML)
+                await bot.send_message(chat_id=tg_user_id, text="✅ Спасибо за оплату! Ваша заявка передана автору — он свяжется с вами в Telegram.")
+
+                del custom_requests[tg_user_id]
+                return "OK"
+            else:
+                return "no custom request"
+
+        return "product not found"
     except Exception as e:
         return f"error: {e}"
 
