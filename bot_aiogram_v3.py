@@ -560,7 +560,7 @@ async def robokassa_payment_handler(request: Request):
         logging.info(f"[CALLBACK] inv_id = {inv_id}")
         logging.info(f"[CALLBACK] inv_id_map keys = {list(inv_id_map.keys())}")
 
-        entry = inv_id_map.get(inv_id)
+        entry = inv_id_map.get(str(inv_id))
         if not entry:
             logging.warning(f"[CALLBACK] inv_id {inv_id} not found in inv_id_map")
             return "unknown invoice"
@@ -579,9 +579,11 @@ async def robokassa_payment_handler(request: Request):
             purchased_paid_pdf.add(tg_user_id)
             # Удаляем напоминание, если пользователь купил
             paid_view_timestamps.pop(tg_user_id, None)
-            if inv_id in inv_id_map:
-                del inv_id_map[inv_id]
+            
+            if str(inv_id) in inv_id_map:
+                del inv_id_map[str(inv_id)]
                 save_inv_map(inv_id_map)
+                
             return "OK"
 
         # === Обработка custom-продукта ===
@@ -611,9 +613,11 @@ async def robokassa_payment_handler(request: Request):
                 if IS_DEV:
                     print(f"[DEV] Получен тестовый платёж: {InvId}, Signature={SignatureValue}")
                 del custom_requests[tg_user_id]
-                if inv_id in inv_id_map:
-                    del inv_id_map[inv_id]
+                
+                if str(inv_id) in inv_id_map:
+                    del inv_id_map[str(inv_id)]
                     save_inv_map(inv_id_map)
+                    
                 return "OK"
             else:
                 return "no custom request"
