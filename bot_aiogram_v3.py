@@ -100,6 +100,8 @@ def save_inv_map(data: dict):
 
 
 async def check_payment_status(inv_id: int) -> bool:
+    import xml.etree.ElementTree as ET
+
     url = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpState"
     params = {
         "MerchantLogin": ROBO_LOGIN,
@@ -112,14 +114,16 @@ async def check_payment_status(inv_id: int) -> bool:
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             text = await resp.text()
-            logging.info(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
+            print(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
 
             try:
                 xml = ET.fromstring(text)
-                for elem in xml:
-                    tag = elem.tag.split('}', 1)[-1]
+
+                for elem in xml.iter():
+                    tag = elem.tag.split('}', 1)[-1]  # убираем namespace
                     text = elem.text.strip() if elem.text else ""
                     print(f"[PAYMENT] Найден тег: {tag} → '{text}'")
+
                     if tag == "Code" and text == "100":
                         logging.info(f"[PAYMENT] Code=100 подтверждён для InvId={inv_id}")
                         return True
