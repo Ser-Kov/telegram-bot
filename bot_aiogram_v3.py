@@ -20,8 +20,7 @@ import time
 import random
 import json
 from pathlib import Path
-import aiohttp
-import xml.etree.ElementTree as ET
+
 
 
 IS_DEV = False  # ← ставь False при пуше в main
@@ -97,43 +96,6 @@ def save_inv_map(data: dict):
     except Exception as e:
         logging.warning(f"[INV_MAP] Ошибка при чтении: {e}")
     return {}
-
-
-async def check_payment_status(inv_id: int) -> bool:
-    import xml.etree.ElementTree as ET
-
-    url = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpState"
-    params = {
-        "MerchantLogin": ROBO_LOGIN,
-        "InvoiceID": inv_id,
-        "Signature": hashlib.md5(f"{ROBO_LOGIN}:{inv_id}:{ROBO_PASSWORD2}".encode()).hexdigest()
-    }
-
-    logging.info(f"[PAYMENT] Проверка статуса оплаты через API, InvId={inv_id}")
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
-            text = await resp.text()
-            print(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
-
-            try:
-                xml = ET.fromstring(text)
-
-                for elem in xml.iter():
-                    tag = elem.tag.split('}', 1)[-1]  # убираем namespace
-                    text = elem.text.strip() if elem.text else ""
-                    print(f"[PAYMENT] Найден тег: {tag} → '{text}'")
-
-                    if tag == "Code" and text == "100":
-                        logging.info(f"[PAYMENT] Code=100 подтверждён для InvId={inv_id}")
-                        return True
-
-                logging.warning(f"[PAYMENT] Код оплаты 100 не найден — платёж не подтверждён")
-                return False
-
-            except Exception as e:
-                logging.error(f"[PAYMENT] Ошибка разбора XML для InvId={inv_id}: {e}")
-                return False
 
 
 # Функции для генерации ссылок с оплатой
@@ -607,12 +569,6 @@ async def robokassa_payment_handler(request: Request):
 
         tg_user_id = entry["user_id"]
         product_code = entry["product_code"]
-
-        is_paid = await check_payment_status(inv_id)
-        if not is_paid:
-            logging.warning(f"[PAYMENT] Оплата по InvId {inv_id} не подтверждена — отмена выдачи")
-            return "not confirmed"
-
         
         # защита от повторной выдачи
         if tg_user_id in purchased_paid_pdf and product_code in purchased_paid_pdf[tg_user_id]:
