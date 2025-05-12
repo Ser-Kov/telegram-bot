@@ -107,24 +107,23 @@ async def check_payment_status(inv_id: int) -> bool:
         "Signature": hashlib.md5(f"{ROBO_LOGIN}:{inv_id}:{ROBO_PASSWORD2}".encode()).hexdigest()
     }
 
-    logging.info(f"[PAYMENT] Отправка запроса в API Robokassa по InvId={inv_id}")
+    logging.info(f"[PAYMENT] Проверка статуса оплаты через API, InvId={inv_id}")
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             text = await resp.text()
-            logging.info(f"[PAYMENT] Получен ответ от Robokassa для InvId={inv_id}:\n{text}")
+            logging.info(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
 
             try:
                 xml = ET.fromstring(text)
-                state = xml.find(".//State")
-                logging.info(f"[PAYMENT] XML-разбор завершён. State элемент: {ET.tostring(state)}")
+                state_text = xml.findtext(".//State")
 
-                if state is not None:
-                    value = state.text.strip() if state.text else ""
-                    logging.info(f"[PAYMENT] Статус оплаты по InvId={inv_id}: {value}")
-                    return value == "5"
+                if state_text is not None:
+                    state = state_text.strip()
+                    logging.info(f"[PAYMENT] Статус оплаты InvId={inv_id}: State={state}")
+                    return state == "5"
                 else:
-                    logging.warning(f"[PAYMENT] Элемент <State> не найден в XML для InvId={inv_id}")
+                    logging.warning(f"[PAYMENT] Элемент <State> не найден в ответе Robokassa для InvId={inv_id}")
                     return False
 
             except Exception as e:
