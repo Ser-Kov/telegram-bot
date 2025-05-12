@@ -117,17 +117,19 @@ async def send_pdf(message: Message):
         document=file,
         caption="✅ Вот твой PDF с 10 AI-промптами — стартовый набор, чтобы попробовать в деле."
     )
+    
+    user_id = message.from_user.id
     received_free_pdf.add(user_id)
+    
     await message.answer(
         "🚀 Хочешь перейти на продвинутый уровень?\n\n"
         "У нас есть 7 PDF по конкретным нишам: маркетинг, Reels, блогеры, курсы, офлайн и т.д.\n\n"
         "Нажми 👉 <b>🔥 Что внутри платных PDF?</b>",
         reply_markup=after_preview_keyboard()
     )
-    user_id = message.from_user.id
+    
     if user_id in free_pdf_reminders:
         del free_pdf_reminders[user_id]
-
 
 
 @router.message(lambda msg: msg.text == "📄 Публичная оферта")
