@@ -107,15 +107,20 @@ async def check_payment_status(inv_id: int) -> bool:
         "Signature": hashlib.md5(f"{ROBO_LOGIN}:{inv_id}:{ROBO_PASSWORD2}".encode()).hexdigest()
     }
 
+    logging.info(f"[PAYMENT] Проверка статуса оплаты через API Robokassa, InvId={inv_id}")
+
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             text = await resp.text()
+            logging.info(f"[PAYMENT] Robokassa raw XML ответ для InvId={inv_id}:\n{text}")
+
             try:
                 xml = ET.fromstring(text)
                 state = xml.findtext(".//State")
+                logging.info(f"[PAYMENT] Статус оплаты для InvId={inv_id}: State={state}")
                 return state == "5"
             except Exception as e:
-                logging.error(f"[PAYMENT] Ошибка при разборе XML: {e}")
+                logging.error(f"[PAYMENT] Ошибка разбора XML ответа Robokassa для InvId={inv_id}: {e}")
                 return False
 
 
