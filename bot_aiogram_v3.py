@@ -21,6 +21,7 @@ import random
 import json
 from pathlib import Path
 import aiohttp
+import xml.etree.ElementTree as ET
 
 
 IS_DEV = False  # ← ставь False при пуше в main
@@ -109,7 +110,13 @@ async def check_payment_status(inv_id: int) -> bool:
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             text = await resp.text()
-            return "<State>5</State>" in text
+            try:
+                xml = ET.fromstring(text)
+                state = xml.findtext(".//State")
+                return state == "5"
+            except Exception as e:
+                logging.error(f"[PAYMENT] Ошибка при разборе XML: {e}")
+                return False
 
 
 # Функции для генерации ссылок с оплатой
