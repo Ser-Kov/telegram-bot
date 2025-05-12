@@ -21,7 +21,7 @@ import random
 import json
 from pathlib import Path
 
-IS_DEV = True  # ← ставь False при пуше в main
+IS_DEV = False  # ← ставь False при пуше в main
 
 # Robokassa настройки
 if IS_DEV:
