@@ -122,6 +122,17 @@ async def cmd_start(message: Message):
     )
 
 
+@router.message(Command("cancel"))
+async def cancel_state(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        "Ок, заявку можно будет оформить позже 👌\nТы вернулся в главное меню 👇",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_keyboard()
+    )
+
+
+
 @router.message(Command("menu"))
 async def show_menu(message: Message):
     await message.answer(
@@ -174,7 +185,8 @@ async def start_custom_prompt(message: Message, state: FSMContext):
         "✍️ <b>Пример:</b>\n"
         "«Я продвигаю онлайн-курс для экспертов. Хочу серию сторис и Reels, которые вовлекают и ведут к "
         "покупке. ЦА — психологи и коучи. Канал — Instagram.»\n\n"
-        "📌 Чем подробнее — тем качественнее будут промпты. Напиши ниже 👇",
+        "📌 Чем подробнее — тем качественнее будут промпты\n\n"
+        "✏️ Напиши ниже или нажми /cancel, чтобы вернуться в меню",
         parse_mode=ParseMode.HTML,
         reply_markup=types.ReplyKeyboardRemove()
     )
@@ -190,7 +202,8 @@ async def handle_custom_prompt_button(callback: CallbackQuery, state: FSMContext
         "✍️ <b>Пример:</b>\n"
         "«Я продвигаю онлайн-курс для экспертов. Хочу серию сторис и Reels, которые вовлекают и ведут к покупке. "
         "ЦА — психологи и коучи. Канал — Instagram.»\n\n"
-        "📌 Чем подробнее — тем качественнее будут промпты. Напиши ниже 👇",
+        "📌 Чем подробнее — тем качественнее будут промпты\n\n"
+        "✏️ Напиши ниже или нажми /cancel, чтобы вернуться в меню",
         parse_mode=ParseMode.HTML
     )
     await state.set_state(CustomPromptForm.waiting_for_description)
@@ -485,6 +498,9 @@ async def robokassa_payment_handler(request: Request):
     OutSum = form.get("OutSum")
     InvId = form.get("InvId")
     SignatureValue = form.get("SignatureValue")
+
+    if not all([OutSum, InvId, SignatureValue]):
+        return "invalid form"
 
     # Только боевая проверка
     base = f"{OutSum}:{InvId}:{ROBO_PASSWORD2}"
