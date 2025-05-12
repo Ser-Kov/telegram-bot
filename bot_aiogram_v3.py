@@ -112,18 +112,18 @@ async def check_payment_status(inv_id: int) -> bool:
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             text = await resp.text()
-            print(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
+            logging.info(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
 
             try:
                 xml = ET.fromstring(text)
-                state_text = xml.findtext(".//State")
+                code_text = xml.findtext(".//Code")
 
-                if state_text is not None:
-                    state = state_text.strip()
-                    logging.info(f"[PAYMENT] Статус оплаты InvId={inv_id}: State={state}")
-                    return state == "5"
+                if code_text:
+                    code = code_text.strip()
+                    logging.info(f"[PAYMENT] Code={code} для InvId={inv_id}")
+                    return code == "100"
                 else:
-                    logging.warning(f"[PAYMENT] Элемент <State> не найден в ответе Robokassa для InvId={inv_id}")
+                    logging.warning(f"[PAYMENT] Элемент <Code> не найден в XML для InvId={inv_id}")
                     return False
 
             except Exception as e:
