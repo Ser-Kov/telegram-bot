@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+env/
+ENV/
+venv/
+
+# VSCode / PyCharm / IDE
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Python dotenv / secrets
+.env
+.env.*
+
+# Railway / Render deploy artifacts
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+
+# FastAPI specific
+instance/
+*.db
