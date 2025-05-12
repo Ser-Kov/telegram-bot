@@ -17,6 +17,9 @@ import hashlib
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 import time
+import random
+import json
+from pathlib import Path
 
 IS_DEV = True  # ← ставь False при пуше в main
 
@@ -67,9 +70,43 @@ PAID_REMINDER_TEXTS = [
 ]
 
 
-# Функция для генерации ссылок с оплатой
+INV_MAP_FILE = Path("data/inv_id_map.json")
+INV_MAP_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+
+def load_inv_map():
+    try:
+        if INV_MAP_FILE.exists():
+            with open(INV_MAP_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        logging.warning(f"[INV_MAP] Ошибка при чтении: {e}")
+    return {}
+
+
+inv_id_map = load_inv_map()
+
+
+def save_inv_map(data: dict):
+    try:
+        with open(INV_MAP_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception as e:
+        logging.warning(f"[INV_MAP] Ошибка при чтении: {e}")
+    return {}
+
+
+# Функции для генерации ссылок с оплатой
+def generate_inv_id(user_id: int) -> int:
+    # Уникальный ID: 2 цифры user_id + 6 цифр времени + 1 случайная цифра
+    t = int(time.time()) % 1_000_000  # последние 6 цифр времени
+    u = user_id % 100                 # последние 2 цифры user_id
+    r = random.randint(0, 9)          # 1 случайная цифра
+    return int(f"{u:02}{t:06}{r}")
+
+
 def generate_payment_url(user_id: int, product_code: str, price: int) -> str:
-    inv_id = f"{user_id}_{product_code}"
+    inv_id = generate_inv_id(user_id)
     out_sum = str(price)
     base = f"{ROBO_LOGIN}:{out_sum}:{inv_id}:{ROBO_PASSWORD1}"
     sign = hashlib.md5(base.encode()).hexdigest()
@@ -82,6 +119,13 @@ def generate_payment_url(user_id: int, product_code: str, price: int) -> str:
 
     if IS_DEV:
         url += "&IsTest=1"
+
+    # сохраняем связку
+    inv_id_map[inv_id] = {
+        "user_id": user_id,
+        "product_code": product_code
+    }
+    save_inv_map(inv_id_map)  # сохраняем в json после обновления
 
     return url
 
@@ -510,8 +554,14 @@ async def robokassa_payment_handler(request: Request):
         return "bad sign"
 
     try:
-        tg_user_id_str, product_code = InvId.split("_")
-        tg_user_id = int(tg_user_id_str)
+        inv_id = int(InvId)
+        inv_id_map = load_inv_map()  # читаем актуальную карту из файла
+        entry = inv_id_map.get(inv_id)
+        if not entry:
+            return "unknown invoice"
+
+        tg_user_id = entry["user_id"]
+        product_code = entry["product_code"]
 
         # === Обработка обычных PDF ===
         if product_code in PRODUCTS:
@@ -524,6 +574,9 @@ async def robokassa_payment_handler(request: Request):
             purchased_paid_pdf.add(tg_user_id)
             # Удаляем напоминание, если пользователь купил
             paid_view_timestamps.pop(tg_user_id, None)
+            if inv_id in inv_id_map:
+                del inv_id_map[inv_id]
+                save_inv_map(inv_id_map)
             return "OK"
 
         # === Обработка custom-продукта ===
@@ -553,6 +606,9 @@ async def robokassa_payment_handler(request: Request):
                 if IS_DEV:
                     print(f"[DEV] Получен тестовый платёж: {InvId}, Signature={SignatureValue}")
                 del custom_requests[tg_user_id]
+                if inv_id in inv_id_map:
+                    del inv_id_map[inv_id]
+                    save_inv_map(inv_id_map)
                 return "OK"
             else:
                 return "no custom request"
