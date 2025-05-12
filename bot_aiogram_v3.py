@@ -55,7 +55,7 @@ paid_view_timestamps = {
     # user_id: {"start": timestamp, "last_remind": None, "attempts": 0}
 }
 received_free_pdf = set()
-purchased_paid_pdf = set()
+purchased_paid_pdf = {}
 
 FREE_REMINDER_TEXTS = [
     "👋 Ты не забрал бесплатный PDF — он по-прежнему доступен.\n10 шаблонов, чтобы сэкономить часы. Забери пока не забыл:",
@@ -567,6 +567,12 @@ async def robokassa_payment_handler(request: Request):
 
         tg_user_id = entry["user_id"]
         product_code = entry["product_code"]
+        
+        # защита от повторной выдачи
+        if tg_user_id in purchased_paid_pdf and product_code in purchased_paid_pdf[tg_user_id]:
+            logging.info(f"[PAYMENT] Повторная попытка: {product_code} уже куплен user_id={tg_user_id}")
+            return "OK"
+
 
         # === Обработка обычных PDF ===
         if product_code in PRODUCTS:
@@ -583,7 +589,11 @@ async def robokassa_payment_handler(request: Request):
             if str(inv_id) in inv_id_map:
                 del inv_id_map[str(inv_id)]
                 save_inv_map(inv_id_map)
-                
+
+            if tg_user_id not in purchased_paid_pdf:
+                purchased_paid_pdf[tg_user_id] = set()
+            purchased_paid_pdf[tg_user_id].add(product_code)
+
             return "OK"
 
         # === Обработка custom-продукта ===
@@ -612,6 +622,7 @@ async def robokassa_payment_handler(request: Request):
                                        text="✅ Спасибо за оплату! Ваша заявка передана автору — он свяжется с вами в Telegram.")
                 if IS_DEV:
                     print(f"[DEV] Получен тестовый платёж: {InvId}, Signature={SignatureValue}")
+                    
                 del custom_requests[tg_user_id]
                 
                 if str(inv_id) in inv_id_map:
