@@ -115,8 +115,9 @@ async def check_payment_status(inv_id: int) -> bool:
             logging.info(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
 
             try:
+                ns = {"r": "http://merchant.roboxchange.com/WebService/"}
                 xml = ET.fromstring(text)
-                code_text = xml.findtext(".//Code")
+                code_text = xml.findtext(".//r:Code", namespaces=ns)
 
                 if code_text:
                     code = code_text.strip()
