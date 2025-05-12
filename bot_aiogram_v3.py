@@ -89,7 +89,7 @@ def generate_payment_url(user_id: int, product_code: str, price: int) -> str:
 # --- Кнопки --- #
 def get_main_keyboard():
     kb = ReplyKeyboardBuilder()
-    kb.button(text="📎 Скачать беслатный PDF")
+    kb.button(text="📎 Скачать бесплатный PDF")
     kb.button(text="🔥 Что внутри платных PDF?")
     kb.button(text="✨ Индивидуальные промпты")
     kb.button(text="📩 Написать автору")
@@ -131,7 +131,7 @@ async def show_menu(message: Message):
     )
 
 
-@router.message(lambda msg: msg.text == "📎 Скачать беслатный PDF")
+@router.message(lambda msg: msg.text == "📎 Скачать бесплатный PDF")
 async def send_pdf(message: Message):
     file = FSInputFile("data/10 промптов для ChatGPT.pdf", filename="10 промптов для ChatGPT.pdf")
     await message.answer_document(
