@@ -18,10 +18,26 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 import time
 
-# Настройки для продакшн
-API_TOKEN = os.environ.get("BOT_TOKEN")
-if not API_TOKEN:
-    raise RuntimeError("BOT_TOKEN is not set")
+IS_DEV = True  # ← ставь False при пуше в main
+
+# Robokassa настройки
+if IS_DEV:
+    ROBO_LOGIN = "ai_lab"  # ← замени на свой тестовый логин
+    ROBO_PASSWORD1 = "R8C0KfOaLgJs9e0PD5bp"
+    ROBO_PASSWORD2 = "PEZMdc7c0CJ9ujfE5Uz6"
+else:
+    ROBO_LOGIN = "ai_lab"
+    ROBO_PASSWORD1 = "tv85vuKRjVLik9zg4K2u"
+    ROBO_PASSWORD2 = "sKNbUPuD24G7P0oadt3A"
+
+
+# Настройка API_TOKEN
+if IS_DEV:
+    API_TOKEN = "7785391437:AAEAco5Mo4em6lWZkvZnlkoShjVm-SMYDH8"
+else:
+    API_TOKEN = os.environ.get("BOT_TOKEN")
+    if not API_TOKEN:
+        raise RuntimeError("BOT_TOKEN is not set")
 
 # Инициализация бота
 bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
@@ -58,10 +74,16 @@ def generate_payment_url(user_id: int, product_code: str, price: int) -> str:
     base = f"{ROBO_LOGIN}:{out_sum}:{inv_id}:{ROBO_PASSWORD1}"
     sign = hashlib.md5(base.encode()).hexdigest()
 
-    return (
+    url = (
         f"https://auth.robokassa.ru/Merchant/Index.aspx?"
-        f"MerchantLogin={ROBO_LOGIN}&OutSum={out_sum}&InvId={inv_id}&SignatureValue={sign}"
+        f"MerchantLogin={ROBO_LOGIN}&OutSum={out_sum}&InvId={inv_id}"
+        f"&SignatureValue={sign}"
     )
+
+    if IS_DEV:
+        url += "&IsTest=1"
+
+    return url
 
 
 # --- Кнопки --- #
@@ -435,11 +457,6 @@ async def contact_author(message: Message):
     )
 
 
-# Robokassa настройки
-ROBO_LOGIN = "ai_lab"
-ROBO_PASSWORD1 = "tv85vuKRjVLik9zg4K2u"
-ROBO_PASSWORD2 = "sKNbUPuD24G7P0oadt3A"
-
 # Таблица соответствий кодов товара и PDF
 PRODUCTS = {
     "reels": "data/Продвинутые Reels-промпты для Instagram и TikTok.pdf",
@@ -479,6 +496,8 @@ async def robokassa_payment_handler(request: Request):
             file = FSInputFile(pdf_path)
             await bot.send_document(chat_id=tg_user_id, document=file,
                                     caption="✅ Спасибо за оплату! Вот ваш PDF.")
+            if IS_DEV:
+                print(f"[DEV] Получен тестовый платёж: {InvId}, Signature={SignatureValue}")
             purchased_paid_pdf.add(tg_user_id)
             # Удаляем напоминание, если пользователь купил
             paid_view_timestamps.pop(tg_user_id, None)
@@ -508,7 +527,8 @@ async def robokassa_payment_handler(request: Request):
                 await bot.send_message(chat_id=ADMIN_ID, text=formatted, parse_mode=ParseMode.HTML)
                 await bot.send_message(chat_id=tg_user_id,
                                        text="✅ Спасибо за оплату! Ваша заявка передана автору — он свяжется с вами в Telegram.")
-
+                if IS_DEV:
+                    print(f"[DEV] Получен тестовый платёж: {InvId}, Signature={SignatureValue}")
                 del custom_requests[tg_user_id]
                 return "OK"
             else:
