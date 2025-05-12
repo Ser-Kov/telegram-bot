@@ -472,6 +472,13 @@ PRODUCTS = {
 app = FastAPI()
 
 
+@app.post("/telegram_webhook")
+async def telegram_webhook(request: Request):
+    body = await request.body()
+    await dp.feed_webhook_update(bot=bot, update=types.Update.model_validate_json(body))
+    return {"ok": True}
+
+
 @app.post("/payment_callback")
 async def robokassa_payment_handler(request: Request):
     form = await request.form()
@@ -592,13 +599,18 @@ async def reminder_loop():
 
 
 # --- Запуск aiogram-бота --- #
-async def main():
-    logging.basicConfig(level=logging.INFO)
-    dp.include_router(router)
-    await dp.start_polling(bot)
+if IS_DEV:
+    @app.on_event("startup")
+    async def dev_start():
+        logging.basicConfig(level=logging.INFO)
+        dp.include_router(router)
+        asyncio.create_task(dp.start_polling(bot))
+        asyncio.create_task(reminder_loop())
+else:
+    @app.on_event("startup")
+    async def prod_start():
+        await bot.set_webhook("https://aiquickstartbot-production.up.railway.app/telegram_webhook")
+        logging.basicConfig(level=logging.INFO)
+        dp.include_router(router)
+        asyncio.create_task(reminder_loop())  # без polling — webhook будет обрабатывать входящие
 
-
-@app.on_event("startup")
-async def start_bot():
-    asyncio.create_task(main())
-    asyncio.create_task(reminder_loop())
