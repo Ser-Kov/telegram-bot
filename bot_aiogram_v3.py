@@ -35,10 +35,11 @@ router = Router()
 free_pdf_reminders = {
     # user_id: {"start": timestamp, "last_remind": None, "attempts": 0}
 }
-
 paid_view_timestamps = {
     # user_id: {"start": timestamp, "last_remind": None, "attempts": 0}
 }
+received_free_pdf = set()
+purchased_paid_pdf = set()
 
 FREE_REMINDER_TEXTS = [
     "👋 Ты не забрал бесплатный PDF — он по-прежнему доступен.\n10 шаблонов, чтобы сэкономить часы. Забери пока не забыл:",
@@ -87,7 +88,7 @@ def after_preview_keyboard():
 @router.message(Command("start"))
 async def cmd_start(message: Message):
     user_id = message.from_user.id
-    if user_id not in free_pdf_reminders:
+    if user_id not in received_free_pdf and user_id not in free_pdf_reminders:
         free_pdf_reminders[user_id] = {
             "start": time.time(),
             "last_remind": None,
@@ -116,6 +117,7 @@ async def send_pdf(message: Message):
         document=file,
         caption="✅ Вот твой PDF с 10 AI-промптами — стартовый набор, чтобы попробовать в деле."
     )
+    received_free_pdf.add(user_id)
     await message.answer(
         "🚀 Хочешь перейти на продвинутый уровень?\n\n"
         "У нас есть 7 PDF по конкретным нишам: маркетинг, Reels, блогеры, курсы, офлайн и т.д.\n\n"
@@ -187,7 +189,7 @@ async def show_paid_options(message: Message):
     kb.adjust(2)
 
     user_id = message.from_user.id
-    if user_id not in paid_view_timestamps:
+    if user_id not in purchased_paid_pdf and user_id not in paid_view_timestamps:
         paid_view_timestamps[user_id] = {
             "start": time.time(),
             "last_remind": None,
@@ -475,6 +477,7 @@ async def robokassa_payment_handler(request: Request):
             file = FSInputFile(pdf_path)
             await bot.send_document(chat_id=tg_user_id, document=file,
                                     caption="✅ Спасибо за оплату! Вот ваш PDF.")
+            purchased_paid_pdf.add(tg_user_id)
             # Удаляем напоминание, если пользователь купил
             paid_view_timestamps.pop(tg_user_id, None)
             return "OK"
