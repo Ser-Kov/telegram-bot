@@ -107,20 +107,28 @@ async def check_payment_status(inv_id: int) -> bool:
         "Signature": hashlib.md5(f"{ROBO_LOGIN}:{inv_id}:{ROBO_PASSWORD2}".encode()).hexdigest()
     }
 
-    logging.info(f"[PAYMENT] Проверка статуса оплаты через API Robokassa, InvId={inv_id}")
+    logging.info(f"[PAYMENT] Отправка запроса в API Robokassa по InvId={inv_id}")
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             text = await resp.text()
-            logging.info(f"[PAYMENT] Robokassa raw XML ответ для InvId={inv_id}:\n{text}")
+            logging.info(f"[PAYMENT] Получен ответ от Robokassa для InvId={inv_id}:\n{text}")
 
             try:
                 xml = ET.fromstring(text)
-                state = xml.findtext(".//State")
-                logging.info(f"[PAYMENT] Статус оплаты для InvId={inv_id}: State={state}")
-                return state == "5"
+                state = xml.find(".//State")
+                logging.info(f"[PAYMENT] XML-разбор завершён. State элемент: {ET.tostring(state)}")
+
+                if state is not None:
+                    value = state.text.strip() if state.text else ""
+                    logging.info(f"[PAYMENT] Статус оплаты по InvId={inv_id}: {value}")
+                    return value == "5"
+                else:
+                    logging.warning(f"[PAYMENT] Элемент <State> не найден в XML для InvId={inv_id}")
+                    return False
+
             except Exception as e:
-                logging.error(f"[PAYMENT] Ошибка разбора XML ответа Robokassa для InvId={inv_id}: {e}")
+                logging.error(f"[PAYMENT] Ошибка разбора XML для InvId={inv_id}: {e}")
                 return False
 
 
