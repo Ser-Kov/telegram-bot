@@ -99,12 +99,6 @@ def save_inv_map(data: dict):
     return {}
 
 
-def strip_namespace(tree):
-    for elem in tree.iter():
-        if '}' in elem.tag:
-            elem.tag = elem.tag.split('}', 1)[1]
-    return tree
-
 async def check_payment_status(inv_id: int) -> bool:
     url = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpState"
     params = {
@@ -118,20 +112,19 @@ async def check_payment_status(inv_id: int) -> bool:
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             text = await resp.text()
-            print(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
+            logging.info(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
 
             try:
                 xml = ET.fromstring(text)
-                xml = strip_namespace(xml)  # удаляем namespace
-                code_text = xml.findtext(".//Code")
+                for elem in xml:
+                    tag = elem.tag.split('}', 1)[-1]
+                    logging.info(f"[PAYMENT] Найден тег: {tag} → {elem.text}")
+                    if tag == "Code" and elem.text and elem.text.strip() == "100":
+                        logging.info(f"[PAYMENT] Code=100 подтверждён для InvId={inv_id}")
+                        return True
 
-                if code_text:
-                    code = code_text.strip()
-                    logging.info(f"[PAYMENT] Code={code} для InvId={inv_id}")
-                    return code == "100"
-                else:
-                    logging.warning(f"[PAYMENT] Элемент <Code> не найден в XML для InvId={inv_id}")
-                    return False
+                logging.warning(f"[PAYMENT] Код оплаты 100 не найден — платёж не подтверждён")
+                return False
 
             except Exception as e:
                 logging.error(f"[PAYMENT] Ошибка разбора XML для InvId={inv_id}: {e}")
