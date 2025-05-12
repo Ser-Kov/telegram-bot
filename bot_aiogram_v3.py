@@ -582,7 +582,7 @@ async def robokassa_payment_handler(request: Request):
                                     caption="✅ Спасибо за оплату! Вот ваш PDF.")
             if IS_DEV:
                 print(f"[DEV] Получен тестовый платёж: {InvId}, Signature={SignatureValue}")
-            purchased_paid_pdf.add(tg_user_id)
+            
             # Удаляем напоминание, если пользователь купил
             paid_view_timestamps.pop(tg_user_id, None)
             
