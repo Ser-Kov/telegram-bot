@@ -99,6 +99,12 @@ def save_inv_map(data: dict):
     return {}
 
 
+def strip_namespace(tree):
+    for elem in tree.iter():
+        if '}' in elem.tag:
+            elem.tag = elem.tag.split('}', 1)[1]
+    return tree
+
 async def check_payment_status(inv_id: int) -> bool:
     url = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpState"
     params = {
@@ -115,9 +121,9 @@ async def check_payment_status(inv_id: int) -> bool:
             logging.info(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
 
             try:
-                ns = {"r": "http://merchant.roboxchange.com/WebService/"}
                 xml = ET.fromstring(text)
-                code_text = xml.findtext(".//r:Code", namespaces=ns)
+                xml = strip_namespace(xml)  # удаляем namespace
+                code_text = xml.findtext(".//Code")
 
                 if code_text:
                     code = code_text.strip()
