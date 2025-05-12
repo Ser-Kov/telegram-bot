@@ -18,7 +18,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 import time
 
-IS_DEV = True  # ← ставь False при пуше в main
+IS_DEV = False  # ← ставь False при пуше в main
 
 # Robokassa настройки
 if IS_DEV:
