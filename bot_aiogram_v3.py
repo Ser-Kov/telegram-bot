@@ -20,6 +20,8 @@ import time
 import random
 import json
 from pathlib import Path
+import aiohttp
+
 
 IS_DEV = False  # ← ставь False при пуше в main
 
@@ -94,6 +96,20 @@ def save_inv_map(data: dict):
     except Exception as e:
         logging.warning(f"[INV_MAP] Ошибка при чтении: {e}")
     return {}
+
+
+async def check_payment_status(inv_id: int) -> bool:
+    url = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpState"
+    params = {
+        "MerchantLogin": ROBO_LOGIN,
+        "InvoiceID": inv_id,
+        "Signature": hashlib.md5(f"{ROBO_LOGIN}:{inv_id}:{ROBO_PASSWORD2}".encode()).hexdigest()
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            text = await resp.text()
+            return "<State>5</State>" in text
 
 
 # Функции для генерации ссылок с оплатой
@@ -567,6 +583,12 @@ async def robokassa_payment_handler(request: Request):
 
         tg_user_id = entry["user_id"]
         product_code = entry["product_code"]
+
+        is_paid = await check_payment_status(inv_id)
+        if not is_paid:
+            logging.warning(f"[PAYMENT] Оплата по InvId {inv_id} не подтверждена — отмена выдачи")
+            return "not confirmed"
+
         
         # защита от повторной выдачи
         if tg_user_id in purchased_paid_pdf and product_code in purchased_paid_pdf[tg_user_id]:
