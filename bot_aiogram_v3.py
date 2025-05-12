@@ -254,40 +254,6 @@ async def handle_custom_prompt_button(callback: CallbackQuery, state: FSMContext
     await callback.answer()
 
 
-@router.message(lambda msg: msg.text == "✨ Индивидуальные промпты")
-async def start_custom_prompt(message: Message, state: FSMContext):
-    await state.set_state(CustomPromptForm.waiting_for_description)
-    await message.answer(
-        "🧠 <b>Опиши как можно подробнее, какая задача перед тобой стоит:</b>\n\n"
-        "— Где ты планируешь применять промпты? (Instagram, сайт, продажи, реклама, обучение...)\n"
-        "— Что именно хочешь получить в результате? (идеи, структура, тексты, формулировки...)\n"
-        "— Какая у тебя ниша / продукт / аудитория?\n\n"
-        "✍️ <b>Пример:</b>\n"
-        "«Я продвигаю онлайн-курс для экспертов. Хочу серию сторис и Reels, которые вовлекают и ведут к "
-        "покупке. ЦА — психологи и коучи. Канал — Instagram.»\n\n"
-        "📌 Чем подробнее — тем качественнее будут промпты. Напиши ниже 👇",
-        parse_mode=ParseMode.HTML,
-        reply_markup=get_return_to_menu_keyboard()
-    )
-    
-
-@router.callback_query(lambda c: c.data == "custom_prompt")
-async def handle_custom_prompt_button(callback: CallbackQuery, state: FSMContext):
-    await callback.message.answer(
-        "🧠 <b>Опиши как можно подробнее, какая задача перед тобой стоит:</b>\n\n"
-        "— Где ты планируешь применять промпты? (Instagram, сайт, продажи, реклама, обучение...)\n"
-        "— Что именно хочешь получить в результате? (идеи, структура, тексты, формулировки...)\n"
-        "— Какая у тебя ниша / продукт / аудитория?\n\n"
-        "✍️ <b>Пример:</b>\n"
-        "«Я продвигаю онлайн-курс для экспертов. Хочу серию сторис и Reels, которые вовлекают и ведут к покупке. "
-        "ЦА — психологи и коучи. Канал — Instagram.»\n\n"
-        "📌 Чем подробнее — тем качественнее будут промпты. Напиши ниже 👇",
-        parse_mode=ParseMode.HTML
-    )
-    await state.set_state(CustomPromptForm.waiting_for_description)
-    await callback.answer()
-
-
 # --- Хендлер: описание платного PDF --- #
 @router.message(lambda msg: msg.text == "🔥 Что внутри платных PDF?")
 async def show_paid_options(message: Message):
@@ -485,14 +451,6 @@ async def show_niche_pdf(callback: CallbackQuery):
 
     await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb.as_markup())
     await callback.answer()
-
-
-@router.message(lambda msg: msg.text == "🏠 Вернуться в меню")
-async def return_to_main_menu(message: Message):
-    await message.answer(
-        "🏠 Главное меню:",
-        reply_markup=get_main_keyboard()
-    )
 
 
 custom_requests = {}  # user_id: {"text": str, "timestamp": float}
