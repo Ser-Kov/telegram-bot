@@ -556,8 +556,13 @@ async def robokassa_payment_handler(request: Request):
     try:
         inv_id = int(InvId)
         inv_id_map = load_inv_map()  # читаем актуальную карту из файла
+        
+        logging.info(f"[CALLBACK] inv_id = {inv_id}")
+        logging.info(f"[CALLBACK] inv_id_map keys = {list(inv_id_map.keys())}")
+
         entry = inv_id_map.get(inv_id)
         if not entry:
+            logging.warning(f"[CALLBACK] inv_id {inv_id} not found in inv_id_map")
             return "unknown invoice"
 
         tg_user_id = entry["user_id"]
