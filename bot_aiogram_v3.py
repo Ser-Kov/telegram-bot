@@ -118,7 +118,7 @@ async def check_payment_status(inv_id: int) -> bool:
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             text = await resp.text()
-            logging.info(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
+            print(f"[PAYMENT] XML-ответ от Robokassa:\n{text}")
 
             try:
                 xml = ET.fromstring(text)
