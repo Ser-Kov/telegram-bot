@@ -33,7 +33,7 @@ else:
 
 # Настройка API_TOKEN
 if IS_DEV:
-    API_TOKEN = "7785391437:AAEAco5Mo4em6lWZkvZnlkoShjVm-SMYDH8"
+    API_TOKEN = "7352951696:AAExpP-XlM-k39cpdjMDEP4FwQ_LR0f5dj0"
 else:
     API_TOKEN = os.environ.get("BOT_TOKEN")
     if not API_TOKEN:
@@ -614,3 +614,8 @@ else:
         dp.include_router(router)
         asyncio.create_task(reminder_loop())  # без polling — webhook будет обрабатывать входящие
 
+
+if IS_DEV:
+    if __name__ == "__main__":
+        import uvicorn
+        uvicorn.run("bot_aiogram_v3:app", host="0.0.0.0", port=8000, reload=True)
