@@ -119,7 +119,7 @@ async def check_payment_status(inv_id: int) -> bool:
                 for elem in xml:
                     tag = elem.tag.split('}', 1)[-1]
                     text = elem.text.strip() if elem.text else ""
-                    logging.info(f"[PAYMENT] Найден тег: {tag} → '{text}'")
+                    print(f"[PAYMENT] Найден тег: {tag} → '{text}'")
                     if tag == "Code" and text == "100":
                         logging.info(f"[PAYMENT] Code=100 подтверждён для InvId={inv_id}")
                         return True
