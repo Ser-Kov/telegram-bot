@@ -444,7 +444,7 @@ async def show_niche_pdf(callback: CallbackQuery):
     text = descriptions.get(niche, "Информация по этой нише будет добавлена позже.")
 
     user_id = callback.from_user.id
-    payment_link = generate_payment_url(user_id, niche, 249)
+    payment_link = generate_payment_url(user_id, niche, 1)
 
     kb = InlineKeyboardBuilder()
     kb.button(text="💳 Оплатить 249 ₽", url=payment_link)
@@ -477,7 +477,7 @@ async def receive_description(message: Message, state: FSMContext):
         "timestamp": time.time()
     }
 
-    payment_link = generate_payment_url(user_id, "custom", 499)
+    payment_link = generate_payment_url(user_id, "custom", 1)
 
     kb = InlineKeyboardBuilder()
     kb.button(text="💳 Оплатить 499 ₽", url=payment_link)
