@@ -623,7 +623,38 @@ async def robokassa_payment_handler(request: Request):
             logging.info(f"[PAYMENT] Повторная попытка: {product_code} уже куплен user_id={tg_user_id}")
             return "OK"
 
+        
+        # === Обработка полного набора PDF ===
+        if product_code == "bundle":
+            files = PRODUCTS["bundle"]
+            for path in files:
+                try:
+                    file = FSInputFile(path)
+                    await bot.send_document(chat_id=tg_user_id, document=file)
+                except Exception as e:
+                    logging.warning(f"[BUNDLE] Ошибка при отправке файла {path}: {e}")
 
+            await bot.send_message(
+                chat_id=tg_user_id,
+                text="✅ Все 7 PDF отправлены! Спасибо за покупку 🙌\n\n"
+                     "Если подборка оказалась полезной — буду рад отзыву:\n"
+                     "<a href='https://t.me/ser_kovalevsky'>Сергей Ковалевский</a>",
+                parse_mode=ParseMode.HTML
+            )
+
+            review_reminders[tg_user_id] = time.time()
+
+            if str(inv_id) in inv_id_map:
+                del inv_id_map[str(inv_id)]
+                save_inv_map(inv_id_map)
+
+            if tg_user_id not in purchased_paid_pdf:
+                purchased_paid_pdf[tg_user_id] = set()
+            purchased_paid_pdf[tg_user_id].add("bundle")
+
+            return "OK"
+
+        
         # === Обработка обычных PDF ===
         if product_code in PRODUCTS:
             pdf_path = PRODUCTS[product_code]
@@ -655,36 +686,7 @@ async def robokassa_payment_handler(request: Request):
 
             return "OK"
 
-        # === Обработка полного набора PDF ===
-        if product_code == "bundle":
-            files = PRODUCTS["bundle"]
-            for path in files:
-                try:
-                    file = FSInputFile(path)
-                    await bot.send_document(chat_id=tg_user_id, document=file)
-                except Exception as e:
-                    logging.warning(f"[BUNDLE] Ошибка при отправке файла {path}: {e}")
-
-            await bot.send_message(
-                chat_id=tg_user_id,
-                text="✅ Все 7 PDF отправлены! Спасибо за покупку 🙌\n\n"
-                     "Если подборка оказалась полезной — буду рад отзыву:\n"
-                     "<a href='https://t.me/ser_kovalevsky'>Сергей Ковалевский</a>",
-                parse_mode=ParseMode.HTML
-            )
-
-            review_reminders[tg_user_id] = time.time()
-
-            if str(inv_id) in inv_id_map:
-                del inv_id_map[str(inv_id)]
-                save_inv_map(inv_id_map)
-
-            if tg_user_id not in purchased_paid_pdf:
-                purchased_paid_pdf[tg_user_id] = set()
-            purchased_paid_pdf[tg_user_id].add("bundle")
-
-            return "OK"
-
+        
         # === Обработка custom-продукта ===
         if product_code == "custom":
             if tg_user_id in custom_requests:
