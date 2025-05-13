@@ -691,6 +691,28 @@ async def reminder_loop():
 
         await asyncio.sleep(300)
 
+INV_ID_TTL = 2 * 60 * 60  # 2 часа в секундах
+
+
+async def auto_cleanup_inv_ids():
+    while True:
+        try:
+            inv_id_map = load_inv_map()
+            now = time.time()
+
+            cleaned = {
+                k: v for k, v in inv_id_map.items()
+                if now - v.get("timestamp", 0) <= INV_ID_TTL
+            }
+
+            if len(cleaned) != len(inv_id_map):
+                save_inv_map(cleaned)
+                logging.info(f"[auto_cleanup] Удалено {len(inv_id_map) - len(cleaned)} старых inv_id")
+
+        except Exception as e:
+            logging.warning(f"[auto_cleanup] Ошибка при автоочистке: {e}")
+
+        await asyncio.sleep(1800)  # каждые 30 минут
 
 # --- Запуск aiogram-бота --- #
 if IS_DEV:
@@ -700,6 +722,7 @@ if IS_DEV:
         dp.include_router(router)
         asyncio.create_task(dp.start_polling(bot))
         asyncio.create_task(reminder_loop())
+        asyncio.create_task(auto_cleanup_inv_ids())
 else:
     @app.on_event("startup")
     async def prod_start():
@@ -707,6 +730,7 @@ else:
         logging.basicConfig(level=logging.INFO)
         dp.include_router(router)
         asyncio.create_task(reminder_loop())  # без polling — webhook будет обрабатывать входящие
+        asyncio.create_task(auto_cleanup_inv_ids())
 
 
 if IS_DEV:
