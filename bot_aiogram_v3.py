@@ -289,15 +289,17 @@ async def show_paid_options(message: Message):
     )
 
     # Отдельное сообщение про Индивидуальные промпты
-    ind_kb = InlineKeyboardBuilder()
-    ind_kb.button(text="✨ Индивидуальные промпты", callback_data="custom_prompt")
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✨ Индивидуальные промпты", callback_data="custom_prompt")
     kb.button(text="📦 Все PDF за 999 ₽", callback_data="bundle_offer")
     kb.adjust(1)
+    
     await message.answer(
-        "❓ Не нашёл свою нишу?\nПопробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу:\n\n"
+        "❓ Не нашёл свою нишу?\n"
+        "Попробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу\n\n"
         "📦 Или сразу получи <b>все 7 PDF за 999 ₽</b> — со скидкой 65%",
         parse_mode=ParseMode.HTML,
-        reply_markup=ind_kb.as_markup()
+        reply_markup=kb.as_markup()
     )
 
     await message.answer(
