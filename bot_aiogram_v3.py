@@ -291,8 +291,11 @@ async def show_paid_options(message: Message):
     # Отдельное сообщение про Индивидуальные промпты
     ind_kb = InlineKeyboardBuilder()
     ind_kb.button(text="✨ Индивидуальные промпты", callback_data="custom_prompt")
+    kb.button(text="📦 Все PDF за 999 ₽", callback_data="bundle_offer")
+    kb.adjust(1)
     await message.answer(
-        "❓ Не нашёл свою нишу?\nПопробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу:",
+        "❓ Не нашёл свою нишу?\nПопробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу:\n\n"
+        "📦 Или сразу получи <b>все 7 PDF за 999 ₽</b> — со скидкой 65%",
         parse_mode=ParseMode.HTML,
         reply_markup=ind_kb.as_markup()
     )
@@ -301,6 +304,34 @@ async def show_paid_options(message: Message):
         "👇 Для возврата в главное меню",
         reply_markup=types.ReplyKeyboardRemove()
     )
+
+
+@router.callback_query(lambda c: c.data == "bundle_offer")
+async def handle_bundle_offer(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    payment_link = generate_payment_url(user_id, "bundle", 1)
+
+    text = (
+        "📦 <b>Получи ВСЕ 7 PDF — одним пакетом, со скидкой 65%</b>\n\n"
+        "💰 Вместо 1743 ₽ → всего 999 ₽.\n"
+        "Ты получаешь:\n"
+        "• 35 продвинутых промптов, готовых к внедрению\n"
+        "• 7 чек-листов по ключевым сценариям (Reels, курсы, продажи и др.)\n"
+        "• Инструкции: как, где, зачем и что адаптировать под свою нишу\n\n"
+        "💡 <b>Для кого:</b>\n"
+        "— Если ты фрилансер, маркетолог, блогер, эксперт или предприниматель\n"
+        "— Если хочешь быстро адаптировать ИИ в работе без мучений\n"
+        "— Если нужна система, а не обрывки промптов\n\n"
+        "📌 <b>Это как нанять AI-консультанта за 1 вечер:</b>\n"
+        "Ты получаешь комплекс — по контенту, офферам, Reels, упаковке, автоответам, и даже офлайн-продажам\n\n"
+        "🎯 Вместо того, чтобы выбирать, тестировать и думать — ты просто внедряешь и идёшь дальше."
+    )
+
+    kb = InlineKeyboardBuilder()
+    kb.button(text="💳 Получить все PDF за 999 ₽", url=payment_link)
+
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb.as_markup())
+    await callback.answer()
 
 
 @router.callback_query(lambda c: c.data.startswith("niche_"))
@@ -451,7 +482,7 @@ async def show_niche_pdf(callback: CallbackQuery):
     text = descriptions.get(niche, "Информация по этой нише будет добавлена позже.")
 
     user_id = callback.from_user.id
-    payment_link = generate_payment_url(user_id, niche, 249)
+    payment_link = generate_payment_url(user_id, niche, 1)
 
     kb = InlineKeyboardBuilder()
     kb.button(text="💳 Оплатить 249 ₽", url=payment_link)
@@ -484,7 +515,7 @@ async def receive_description(message: Message, state: FSMContext):
         "timestamp": time.time()
     }
 
-    payment_link = generate_payment_url(user_id, "custom", 499)
+    payment_link = generate_payment_url(user_id, "custom", 1)
 
     kb = InlineKeyboardBuilder()
     kb.button(text="💳 Оплатить 499 ₽", url=payment_link)
@@ -529,7 +560,17 @@ PRODUCTS = {
     "offline": "data/Продвинутые промпты для малого бизнеса и офлайн-услуг.pdf",
     "courses": "data/Продвинутые промпты для онлайн-курсов и инфобизнеса.pdf",
     "ecom": "data/Продвинутые промпты для товарного бизнеса и интернет-магазинов.pdf",
-    "freelance": "data/Продвинутые промпты для фрилансеров и специалистов услуг.pdf"
+    "freelance": "data/Продвинутые промпты для фрилансеров и специалистов услуг.pdf",
+    "bundle": [  # список всех путей
+    "data/Продвинутые Reels-промпты для Instagram и TikTok.pdf",
+    "data/Продвинутые промпты для SMM-специалистов и контент-маркетинга.pdf",
+    "data/Продвинутые промпты для блогеров и личного бренда.pdf",
+    "data/Продвинутые промпты для малого бизнеса и офлайн-услуг.pdf",
+    "data/Продвинутые промпты для онлайн-курсов и инфобизнеса.pdf",
+    "data/Продвинутые промпты для товарного бизнеса и интернет-магазинов.pdf",
+    "data/Продвинутые промпты для фрилансеров и специалистов услуг.pdf"
+    ]
+
 }
 
 # --- FastAPI для Robokassa --- #
@@ -609,6 +650,36 @@ async def robokassa_payment_handler(request: Request):
             if tg_user_id not in purchased_paid_pdf:
                 purchased_paid_pdf[tg_user_id] = set()
             purchased_paid_pdf[tg_user_id].add(product_code)
+
+            return "OK"
+
+        # === Обработка полного набора PDF ===
+        if product_code == "bundle":
+            files = PRODUCTS["bundle"]
+            for path in files:
+                try:
+                    file = FSInputFile(path)
+                    await bot.send_document(chat_id=tg_user_id, document=file)
+                except Exception as e:
+                    logging.warning(f"[BUNDLE] Ошибка при отправке файла {path}: {e}")
+
+            await bot.send_message(
+                chat_id=tg_user_id,
+                text="✅ Все 7 PDF отправлены! Спасибо за покупку 🙌\n\n"
+                     "Если подборка оказалась полезной — буду рад отзыву:\n"
+                     "<a href='https://t.me/ser_kovalevsky'>Сергей Ковалевский</a>",
+                parse_mode=ParseMode.HTML
+            )
+
+            review_reminders[tg_user_id] = time.time()
+
+            if str(inv_id) in inv_id_map:
+                del inv_id_map[str(inv_id)]
+                save_inv_map(inv_id_map)
+
+            if tg_user_id not in purchased_paid_pdf:
+                purchased_paid_pdf[tg_user_id] = set()
+            purchased_paid_pdf[tg_user_id].add("bundle")
 
             return "OK"
 
