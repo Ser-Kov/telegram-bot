@@ -297,7 +297,7 @@ async def show_paid_options(message: Message):
     await message.answer(
         "❓ Не нашёл свою нишу?\n"
         "Попробуй <b>Индивидуальные промпты</b> — мы соберём PDF под твою задачу\n\n"
-        "📦 Или сразу получи <b>все 7 PDF за 999 ₽</b> — со скидкой 65%",
+        "📦 Или сразу получи <b>все 7 PDF за 999 ₽</b> — со скидкой 45%",
         parse_mode=ParseMode.HTML,
         reply_markup=kb.as_markup()
     )
@@ -314,7 +314,7 @@ async def handle_bundle_offer(callback: CallbackQuery):
     payment_link = generate_payment_url(user_id, "bundle", 1)
 
     text = (
-        "📦 <b>Получи ВСЕ 7 PDF — одним пакетом, со скидкой 65%</b>\n\n"
+        "📦 <b>Получи ВСЕ 7 PDF — одним пакетом, со скидкой 45%</b>\n\n"
         "💰 Вместо 1743 ₽ → всего 999 ₽.\n"
         "Ты получаешь:\n"
         "• 35 продвинутых промптов, готовых к внедрению\n"
@@ -484,7 +484,7 @@ async def show_niche_pdf(callback: CallbackQuery):
     text = descriptions.get(niche, "Информация по этой нише будет добавлена позже.")
 
     user_id = callback.from_user.id
-    payment_link = generate_payment_url(user_id, niche, 1)
+    payment_link = generate_payment_url(user_id, niche, 249)
 
     kb = InlineKeyboardBuilder()
     kb.button(text="💳 Оплатить 249 ₽", url=payment_link)
@@ -517,7 +517,7 @@ async def receive_description(message: Message, state: FSMContext):
         "timestamp": time.time()
     }
 
-    payment_link = generate_payment_url(user_id, "custom", 1)
+    payment_link = generate_payment_url(user_id, "custom", 499)
 
     kb = InlineKeyboardBuilder()
     kb.button(text="💳 Оплатить 499 ₽", url=payment_link)
@@ -626,18 +626,31 @@ async def robokassa_payment_handler(request: Request):
         
         # === Обработка полного набора PDF ===
         if product_code == "bundle":
-            files = PRODUCTS["bundle"]
-            for path in files:
-                try:
-                    file = FSInputFile(path)
-                    await bot.send_document(chat_id=tg_user_id, document=file)
-                except Exception as e:
-                    logging.warning(f"[BUNDLE] Ошибка при отправке файла {path}: {e}")
+            import zipfile
+            import tempfile
 
+            files = PRODUCTS["bundle"]
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp_zip:
+                with zipfile.ZipFile(tmp_zip, 'w') as zipf:
+                    for path in files:
+                        filename = os.path.basename(path)
+                        zipf.write(path, arcname=filename)
+
+                zip_path = tmp_zip.name
+
+            # Отправка архива
+            file = FSInputFile(zip_path, filename="AI_пакет_7_PDF.zip")
+            await bot.send_document(
+                chat_id=tg_user_id,
+                document=file,
+                caption="✅ Все 7 PDF собраны в архив и готовы к скачиванию.\nСпасибо за покупку!"
+            )
+
+            # Сообщение об отзыве
             await bot.send_message(
                 chat_id=tg_user_id,
-                text="✅ Все 7 PDF отправлены! Спасибо за покупку 🙌\n\n"
-                     "Если подборка оказалась полезной — буду рад отзыву:\n"
+                text="🙏 Если комплект оказался полезным — буду рад отзыву:\n"
                      "<a href='https://t.me/ser_kovalevsky'>Сергей Ковалевский</a>",
                 parse_mode=ParseMode.HTML
             )
@@ -651,6 +664,8 @@ async def robokassa_payment_handler(request: Request):
             if tg_user_id not in purchased_paid_pdf:
                 purchased_paid_pdf[tg_user_id] = set()
             purchased_paid_pdf[tg_user_id].add("bundle")
+
+            os.remove(zip_path)
 
             return "OK"
 
