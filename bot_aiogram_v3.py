@@ -311,7 +311,7 @@ async def show_paid_options(message: Message):
 @router.callback_query(lambda c: c.data == "bundle_offer")
 async def handle_bundle_offer(callback: CallbackQuery):
     user_id = callback.from_user.id
-    payment_link = generate_payment_url(user_id, "bundle", 1)
+    payment_link = generate_payment_url(user_id, "bundle", 999)
 
     text = (
         "📦 <b>Получи ВСЕ 7 PDF — одним пакетом, со скидкой 45%</b>\n\n"
