@@ -56,8 +56,13 @@ free_pdf_reminders = {
 paid_view_timestamps = {
     # user_id: {"start": timestamp, "last_remind": None, "attempts": 0}
 }
+
 received_free_pdf = set()
 purchased_paid_pdf = {}
+
+review_reminders = {
+    # user_id: timestamp_покупки
+}
 
 FREE_REMINDER_TEXTS = [
     "👋 Ты не забрал бесплатный PDF — он по-прежнему доступен.\n10 шаблонов, чтобы сэкономить часы. Забери пока не забыл:",
@@ -584,6 +589,15 @@ async def robokassa_payment_handler(request: Request):
                                     caption="✅ Спасибо за оплату! Вот ваш PDF.")
             if IS_DEV:
                 print(f"[DEV] Получен тестовый платёж: {InvId}, Signature={SignatureValue}")
+
+            review_reminders[tg_user_id] = time.time()
+            await bot.send_message(
+                chat_id=tg_user_id,
+                text="🙏 Если PDF оказался полезным — буду очень благодарен за короткий отзыв!\n\n"
+                "Напиши мне прямо в личку 👉 <a href="https://t.me/ser_kovalevsky">Сергей Ковалевский</a>\n\n"
+                "Твои отзывы помогают улучшать продукт и мотивируют продолжать ❤️",
+                parse_mode=ParseMode.HTML
+            )
             
             # Удаляем напоминание, если пользователь купил
             paid_view_timestamps.pop(tg_user_id, None)
@@ -595,6 +609,11 @@ async def robokassa_payment_handler(request: Request):
             if tg_user_id not in purchased_paid_pdf:
                 purchased_paid_pdf[tg_user_id] = set()
             purchased_paid_pdf[tg_user_id].add(product_code)
+
+            review_reminders[tg_user_id] = time.time()
+
+
+
 
             return "OK"
 
@@ -688,6 +707,23 @@ async def reminder_loop():
                         del paid_view_timestamps[user_id]
                 except Exception as e:
                     logging.warning(f"[PAID REMINDER] Ошибка для {user_id}: {e}")
+
+        # Напоминание оставить отзыв через 24 часа
+        for user_id, timestamp in list(review_reminders.items()):
+            if now - timestamp >= 86400:  # 24 часа
+                try:
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text=(
+                            "📝 Привет! Напоминаю, что можно оставить отзыв, если PDF оказался полезным 🙌\n\n"
+                            'Напиши прямо в Telegram 👉 <a href="https://t.me/ser_kovalevsky">Сергей Ковалевский</a>\n\n'
+                            "Спасибо тебе — это правда очень помогает ❤️"
+                        ),
+                        parse_mode=ParseMode.HTML
+                    )
+                    del review_reminders[user_id]
+                except Exception as e:
+                    logging.warning(f"[REVIEW REMINDER] Ошибка при отправке для {user_id}: {e}")
 
         await asyncio.sleep(300)
 
