@@ -610,11 +610,6 @@ async def robokassa_payment_handler(request: Request):
                 purchased_paid_pdf[tg_user_id] = set()
             purchased_paid_pdf[tg_user_id].add(product_code)
 
-            review_reminders[tg_user_id] = time.time()
-
-
-
-
             return "OK"
 
         # === Обработка custom-продукта ===
