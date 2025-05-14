@@ -23,7 +23,7 @@ from pathlib import Path
 
 
 
-IS_DEV = False  # ← ставь False при пуше в main
+IS_DEV = False  # ← ставь False при пуше в main.
 
 # Robokassa настройки
 if IS_DEV:
